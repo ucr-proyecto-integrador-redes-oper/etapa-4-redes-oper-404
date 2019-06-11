@@ -28,6 +28,8 @@ class Naranja():
 		self.nodos_grafo = []
 		self.paquetes=[]
 		self.mi_ip='255.255.255.255'
+		
+
 
 	def inicio(self):
 		paquete=paquete_inicial()
@@ -52,149 +54,132 @@ class Naranja():
 			
 
 
+	
+
+
+	def create_pack_token(self,tipo, token, ip_naranja, ip_azul, subtipo, nodo, puerto_azul):
+		return byte_pack= struct.pack('BBiiBhh', tipo.uncode(), token, ip_naranja.uncode(), ip_azul.uncode(), subtipo.uncode(), nodo, puerto_azul)
+
+ 	def unpack_pack_token(self, datos):
+		struct.unpack('BBiiBhh', datos)
+		self.tipo=datos[0].decode('utf-8')
+		self.token=datos[1]
+		self.ip_naranja=datos[2].decode('utf-8')
+		self.ip_azul=datos[3].decode('utf-8')
+		self.nodo=datos[4]
+		self.subtipo=datos[5].decode('utf-8')
+		self.puerto_azul=datos[6]
+
+
+	def create_pack_inicial(self, tipo, ip_naranja, elegido):
+		return byte_pack= struct.pack('Bii', tipo.uncode(), ip_naranja.uncode(), elegido.uncode())
+
+ 	def unpack_pack_inicial(self, datos):
+		struct.unpack('Bii', datos)
+		self.tipo=datos[0].decode('utf-8')
+		self.ip_naranja=datos[1].decode('utf-8')
+		self.elegido=datos[2].decode('utf-8')
+
+	def procesar_token(self,paquete):
+		
+		paquete_enviar=''
+		
+		if paquete.ip_naranja==self.mi_ip:
+			
+			paquete_enviar= self.create_pack_token('T' + '0' +  + paquete.ip_naranja+ paquete.ip_azul + paquete.nodo + 'S' + self.mi_ip)
+		
+		else: 
+			paquete_enviar=''
+			if paquete.token== '0':					
+				if len(self.solicitudes):
+					aux=self.solicitudes.pop()
+					paquete_enviar= self.create_pack_token('T' + '1' +  + aux[0]+ aux[1] + aux[2] + 'S' + self.mi_ip)
+							
+						
+				elif len(self.muertos):
+					aux=self.muertos.pop()
+					paquete_enviar= self.create_pack_token('T' + '1' +  + paquete.ip_naranja+ paquete.ip_azul + aux + 'D' + self.mi_ip)
+					
+						
+				elif self.completo:
+					paquete_enviar= self.create_pack_token('T' + '1' +  + paquete.ip_naranja+ paquete.ip_azul + paquete.nodo+ 'C' + self.mi_ip)
+			
+			self.paquetes.append(paquete_enviar)
+					
+			else:
+
+				if subtipo=='S':
+					existe=False
+						
+					aux=[nodo, ip_azul, puerto_azul]
+						
+					for temp in self.nodos_grafo:
+						if nodo in temp:
+							existe=True
+
+					if not existe:
+						self.nodos_grafo.append(aux)
+								
+							
+					self.paquetes.append(paquete)
+
+
+				elif subtipo=='D':
+
+					for temp in self.nodos_grafo:
+						if nodo in temp:
+							self.nodos_grafo.remove(temp)
+
+					self.paquetes.append(paquete)			 
+
+
+				elif subtipo=='C':
+					self.completos = self.completos + 1
+						#if completos == cant_nodos
+						#	send paquete 
+
+
+	
+
+	def procesar_inicial(self,paquete):
+		paquete_enviar=''
+		if paquete.elegido != self.mi_ip:
+			if paquete.ip_naranja < self.mi_ip:			 
+				paquete_enviar= self.create_pack_inicial(paquete.tipo, paquete.ip_naranja, self.mi_ip)
+
+			
+					
+		else:
+			aux=[0,'',0]
+			paquete_enviar= self.create_pack_token('T' + '0' +  + aux[0]+ aux[1] + aux[2] + 'S' + self.mi_ip)
+			if len(self.solicitudes):
+				aux=self.solicitudes.pop()
+				paquete_enviar= self.create_pack_token('T' + '1' +  + aux[0]+ aux[1] + aux[2] + 'S' + self.mi_ip)
+
+		
+		self.paquetes.append(paquete_enviar)
+
+	
+
 	def recibir_naranja_naranja(self):
 		
-
-
 		for i in range(10):
 
-			#paquete = recibe secureUDP
-			#lock	
-			#paquete='T0600301.301.301.3017777S128.128.128.128'
-			paquete='I128.128.128.128130.130.130.130'
-			
-			
+			#paquete = recibe secureUDP	
 			if paquete[0]=='I':
-				valido=False
-				ip_naranja=''
-				elegido=''
-				for i in range(15):
-					if paquete[i+1]!='0' or valido:
-						ip_naranja= ip_naranja + paquete[i+1]
-						valido=True
-
-				valido=False
-				for i in range(15):
-					if paquete[i+16]!='0' or valido:
-						elegido= elegido + paquete[i+16]
-						valido=True
-				
-				
-				if elegido != self.mi_ip:
-					if ip_naranja < self.mi_ip:			 
-						paquete= 'I'+  ip_naranja +   self.mi_ip
-
-					self.paquetes.append(paquete)
-					
-				else:
-					paquete= 'T' + '0' + aux[0] + aux[1] + aux[2] + 'S' + self.mip
-					if len(self.solicitudes):
-						aux=self.solicitudes.pop()
-						paquete= 'T' + '1' + aux[0] + aux[1] + aux[2] + 'S' + self.mip
-
-					self.paquetes.append(paquete)
-
+				paquete_inicial=self.unpack_pack_inicial(paquete)
+				procesar_inicial(paquete_inicial)
 
 
 			elif paquete[0]=='T':
+				paquete_token=self.unpack_pack_token(paquete)
+				procesar_token(paquete_inicial)
 
-				token=paquete[1]
-				ip_naranja=''
-				nodo=''
-				ip_azul=''
-				puerto_azul=''
 				
-				valido=False
-				for i in range(3):
-					if paquete[i+2]!='0' or valido:
-						nodo= nodo+paquete[i+2]
-						valido=True
-
-				valido=False	
-				for i in range(15):
-					if paquete[i+5]!='0' or valido:
-						ip_azul= ip_azul+paquete[i+5]
-						valido=True
-
-				valido=False
-				for i in range(4):
-					if paquete[i+20]!='0' or valido:
-						ip_azul= ip_azul+paquete[i+20]
-						valido=True
-
-				subtipo=paquete[24]
-				
-				valido=False
-				for i in range(15):
-					if paquete[i+25]!='0' or valido:
-						ip_naranja= ip_naranja+paquete[i+25]
-						valido=True
 
 
 
-				if ip_naranja==self.mi_ip:
-					paquete[1]='0'
-					self.paquetes.append(paquete)
-				else: 
-					if token== '0':					
-						if len(self.solicitudes):
-							subtipo='S'
-							aux=self.solicitudes.pop()
-							nodo=aux[0]
-							token='1'
-							ip_azul=aux[1]
-							puerto_azul=aux[2]
-							ip_naranja=self.mi_ip			
-						
-						elif len(self.muertos):
-							token='1'
-							subtipo='D'
-							aux=self.muertos.pop()
-							nodo=aux
-							ip_naranja=self.mi_ip
-						
-						elif self.completo:
-							token='1'
-							subtipo='C'
-							ip_naranja=self.mi_ip
-
-
-						paquete='T' + token + nodo + ip_azul + puerto_azul + subtipo + ip_naranja
-						self.paquetes.append(paquete)
-					
-					else:
-
-						if subtipo=='S':
-							existe=False
-						
-							aux=[nodo, ip_azul, puerto_azul]
-						
-							for temp in self.nodos_grafo:
-								if nodo in temp:
-									existe=True
-
-							if not existe:
-								self.nodos_grafo.append(aux)
-								
-							
-							self.paquetes.append(paquete)
-
-
-						elif subtipo=='D':
-
-							for temp in self.nodos_grafo:
-								if nodo in temp:
-									self.nodos_grafo.remove(temp)
-
-							self.paquetes.append(paquete)			 
-
-
-						elif subtipo=='C':
-							self.completos = self.completos + 1
-							#if completos == cant_nodos
-							#	send paquete 
-
-			#unlock
+			
 def main():
 	n_naranja = Naranja()
 	threading.Thread(target=n_naranja.recibir_naranja_naranja).start()
