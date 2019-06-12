@@ -1,21 +1,20 @@
 import threading
 
+class paquete_token:
+	def __init__(self):
+		self.token = 0
+		self.tipo = 'T'
+        self.ip_naranja=0
+        self.ip_azul=0
+        self.puerto_azul=0
+        self.subtipo=''
+		self.nodo=0
 
-# class paquete_token:
-#     def __init__(self):
-#         self.token = 0
-#         self.tipo = 'T'
-#         self.ip_naranja=0
-#         self.ip_azul=0
-#         self.puerto_azul=0
-#         self.subtipo=''
-#         self.nodo=0
-
-# class paquete_inicial:
-#     def __init__(self):
-#         self.tipo = 'I'
-#         self.ip_naranja=0
-#         self.elegido=0
+class paquete_inicial:
+     def __init__(self):
+        self.tipo = 'I'
+        self.ip_naranja=0
+        self.elegido=0
 
 
 class Naranja():
@@ -39,104 +38,92 @@ class Naranja():
 		#unlock
         
 
-	
-	def enviar_naranja_naranja(self):
-
-		for i in range(10):
-			#lock
-
-			if len(self.paquetes):
-				paquete=self.paquetes.pop()
-				print(paquete)
-
-			#unlock
-			#send secure udp
-			
-
-
-	
-
-
 	def create_pack_token(self,tipo, token, ip_naranja, ip_azul, subtipo, nodo, puerto_azul):
-		return byte_pack= struct.pack('BBiiBhh', tipo.uncode(), token, ip_naranja.uncode(), ip_azul.uncode(), subtipo.uncode(), nodo, puerto_azul)
+		return byte_pack= struct.pack('BBiiBhh', tipo.uncode(), token, ip_naranja.uncode(), ip_azul.uncode(),  nodo, subtipo.uncode(), puerto_azul)
 
- 	def unpack_pack_token(self, datos):
+ 	def unpack_pack_token(self):
+		paquete=paquete_token()
 		struct.unpack('BBiiBhh', datos)
-		self.tipo=datos[0].decode('utf-8')
-		self.token=datos[1]
-		self.ip_naranja=datos[2].decode('utf-8')
-		self.ip_azul=datos[3].decode('utf-8')
-		self.nodo=datos[4]
-		self.subtipo=datos[5].decode('utf-8')
-		self.puerto_azul=datos[6]
+		paquete.tipo=datos[0].decode('utf-8')
+		paquete.token=datos[1]
+		paquete.ip_naranja=datos[2].decode('utf-8')
+		paquete.ip_azul=datos[3].decode('utf-8')
+		paquete.nodo=datos[4]
+		paquete.subtipo=datos[5]
+		paquete.puerto_azul=datos[6]
+		return paquete
 
 
 	def create_pack_inicial(self, tipo, ip_naranja, elegido):
 		return byte_pack= struct.pack('Bii', tipo.uncode(), ip_naranja.uncode(), elegido.uncode())
 
  	def unpack_pack_inicial(self, datos):
+		paquete=paquete_inicial()
 		struct.unpack('Bii', datos)
-		self.tipo=datos[0].decode('utf-8')
-		self.ip_naranja=datos[1].decode('utf-8')
-		self.elegido=datos[2].decode('utf-8')
+		paquete.tipo=datos[0].decode('utf-8')
+		paquete.ip_naranja=datos[1].decode('utf-8')
+		paquete.elegido=datos[2].decode('utf-8')
+		return paquete
 
 	def procesar_token(self,paquete):
 		
-		paquete_enviar=''
+		paquete_enviar= self.create_pack_token('T' ,'0' ,paquete.ip_naranja ,paquete.ip_azul ,paquete.nodo  , 'S' , paquete.puerto_azul)
 		
 		if paquete.ip_naranja==self.mi_ip:
 			
-			paquete_enviar= self.create_pack_token('T' + '0' +  + paquete.ip_naranja+ paquete.ip_azul + paquete.nodo + 'S' + self.mi_ip)
+			paquete_enviar= self.create_pack_token('T' , '0' , paquete.ip_naranja,  paquete.ip_azul , paquete.nodo ,'S' , paquete.puerto_azul)
+			
+			self.paquetes.append(paquete_enviar)
 		
 		else: 
-			paquete_enviar=''
-			if paquete.token== '0':					
+			
+			if paquete.token== '0':
+							
 				if len(self.solicitudes):
 					aux=self.solicitudes.pop()
-					paquete_enviar= self.create_pack_token('T' + '1' +  + aux[0]+ aux[1] + aux[2] + 'S' + self.mi_ip)
+					paquete_enviar= self.create_pack_token('T' , '1' ,  self.mi_ip, aux[0], aux[1] ,  'S' , aux[2])
 							
 						
 				elif len(self.muertos):
 					aux=self.muertos.pop()
-					paquete_enviar= self.create_pack_token('T' + '1' +  + paquete.ip_naranja+ paquete.ip_azul + aux + 'D' + self.mi_ip)
+					paquete_enviar= self.create_pack_token('T' , '1' ,  + self.mi_ip , paquete.ip_azul , aux , 'D' , paquete.puerto_azul)
 					
 						
 				elif self.completo:
-					paquete_enviar= self.create_pack_token('T' + '1' +  + paquete.ip_naranja+ paquete.ip_azul + paquete.nodo+ 'C' + self.mi_ip)
+					paquete_enviar= self.create_pack_token('T' , '1', self.mi_ip , paquete.ip_azul , paquete.nodo, 'C' , paquete.puerto_azul)
 			
-			self.paquetes.append(paquete_enviar)
+				self.paquetes.append(paquete_enviar)
 					
 			else:
 
-				if subtipo=='S':
+				if paquete.subtipo=='S':
+					paquete_enviar= self.create_pack_token('T' , '1' ,  , paquete.ip_naranja, paquete.ip_azul , paquete.nodo  , 'C' , paquete.puerto_azul)
 					existe=False
 						
-					aux=[nodo, ip_azul, puerto_azul]
+					aux=[paquete.nodo, paquete.ip_azul, paquete.puerto_azul]
 						
 					for temp in self.nodos_grafo:
-						if nodo in temp:
+						if paquete.nodo in temp:
 							existe=True
 
 					if not existe:
-						self.nodos_grafo.append(aux)
-								
-							
-					self.paquetes.append(paquete)
-
-
-				elif subtipo=='D':
+						self.nodos_grafo.append(aux)		
+				
+				elif paquete.subtipo=='D':
+					paquete_enviar= self.create_pack_token('T' , '1' ,  paquete.ip_naranja , paquete.ip_azul , paquete.nodo  , 'D' , paquete.puerto_azul)
 
 					for temp in self.nodos_grafo:
-						if nodo in temp:
-							self.nodos_grafo.remove(temp)
+						if paquete.nodo in temp:
+							self.nodos_grafo.remove(temp)					
+					
 
-					self.paquetes.append(paquete)			 
-
-
-				elif subtipo=='C':
+				elif paquete.subtipo=='C':
+					paquete_enviar= self.create_pack_token('T' , '1' ,paquete.ip_naranja, paquete.ip_azul , paquete.nodo  , 'C' , paquete.puerto_azul)
 					self.completos = self.completos + 1
 						#if completos == cant_nodos
 						#	send paquete 
+					
+				self.paquetes.append(paquete_enviar)
 
 
 	
@@ -161,11 +148,26 @@ class Naranja():
 
 	
 
+	
+	def enviar_naranja_naranja(self):
+
+		for i in range(10):
+			#lock
+
+			if len(self.paquetes):
+				paquete=self.paquetes.pop()
+				print(paquete)
+
+			#unlock
+			#send secure udp
+			
+
 	def recibir_naranja_naranja(self):
 		
 		for i in range(10):
 
 			#paquete = recibe secureUDP	
+			
 			if paquete[0]=='I':
 				paquete_inicial=self.unpack_pack_inicial(paquete)
 				procesar_inicial(paquete_inicial)
