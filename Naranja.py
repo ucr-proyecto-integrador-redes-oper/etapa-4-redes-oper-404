@@ -12,7 +12,7 @@ class Naranja():
 		self.completos=0
 
 		#cola de solicitudes de nodos azules
-		self.solicitudes = [['255.234.234.255', 9999], ['253.234.234.255', 5555], ['255.234.234.222',  4444]]
+		self.solicitudes = [['255.234.234.255', 9999]]
 		#cola de nodos muertos de nodos azules
 		self.muertos=[['255.234.234.255',1, 6666], ['253.234.234.255',2, 6667], ['255.234.234.222',3, 7666]]
 		
@@ -23,6 +23,7 @@ class Naranja():
 		
 		#lista de nodos activos'
 		self.nodos_grafo = []
+		
 
 		#cola de paquetes
 		self.paquetes=[]
@@ -37,7 +38,7 @@ class Naranja():
 		self.reenviar=0
 
 		#variables para conexion UDP
-		self.mi_ip='10.1.137.41'
+		self.mi_ip='localhost'
 		self.mi_port   = 8888
 		self.bufferSize  = 1024
 		self.UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
@@ -47,7 +48,7 @@ class Naranja():
 		# Bind to address and ip
 
 		self.UDPServerSocket.bind((self.mi_ip, self.mi_port))
-		self.vecino=('10.1.137.137', 7777)
+		self.vecino=(self.mi_ip, 6666)
 
 
 
@@ -62,15 +63,30 @@ class Naranja():
 			reader = csv.reader(File)
 			for row in reader:
 				self.grafo.append(row)
+
+		print(self.grafo)
 				
 
 	#busca posible nodos libres dentro del grafo y da -1 si no hay disponibles
 	def buscar_nodo(self):
+		
 		for f in range(len(self.grafo)):
 			for c in range(len(self.grafo[0])):
-				for temp in self.nodos_grafo:
-						if self.grafo[f][c] not in temp:
+				existe=False
+				if self.grafo[f][c]!='':
+				
+					if self.nodos_grafo !=[]:
+						
+						for temp in self.nodos_grafo:
+							if int(self.grafo[f][c]) in temp:
+								existe=True
+
+						if not existe:
 							return self.grafo[f][c]
+							
+					else:
+					
+						return self.grafo[f][c]
 					
 					
 
@@ -87,8 +103,9 @@ class Naranja():
 				break
 		
 		#se crea el token inicial y se pone llego=0 para esperar que llegue con el timer
-		paquete=self.packs.create_pack_inicial('I', self.mi_ip)
+		paquete=self.packs.create_pack_inicial('0', self.mi_ip)
 		self.llego=0
+		
 
 		#se lee el grafo al inicio
 		self.leer_grafo()
@@ -119,10 +136,12 @@ class Naranja():
 	
 
 	#procesmaiento del paquete
-	def procesar_token(self,paquete, paquete_enviar):
+	def procesar_paquete(self,paquete, paquete_enviar):
 		
 		#si es igual ip me llego el paquete que envie y libero el token
+
 		if self.token:
+			print(3)
 		
 			paquete_enviar= self.packs.create_pack_vacio('3')
 			self.token=0
@@ -141,9 +160,13 @@ class Naranja():
 					aux=self.solicitudes.pop()
 					nodo=self.buscar_nodo()
 					if nodo!= -1:
+						print('encontro'+ str(nodo))
+						
+						self.nodos_grafo.append([int(nodo), aux[0], aux[1]])
+						print(self.nodos_grafo)
 						#para control con timer
 						self.llego=0
-						paquete_enviar= self.packs.create_pack_asignacion('2' , int(nodo) , aux[0], aux[1])
+						paquete_enviar= self.packs.create_pack_asignacion('1' , int(nodo) , aux[0], aux[1])
 						self.token=1
 						#paquete_azul= self.packs.create_pack_asignacion()
 
@@ -166,20 +189,21 @@ class Naranja():
 		
 			#caso del que el token esta ocupado		
 			elif paquete.tipo=='1':
+				print('voy a agregar')
 
 				#guardo el nodo que llego de otro naranja en mi lista de nodos ocupados
-				existe=False
 						
 				aux=[paquete.nodo, paquete.ip_azul, paquete.puerto_azul]
 						
-				for temp in self.nodos_grafo:
-					if paquete.nodo in temp:
-						existe=True
-
-				if not existe:
-					self.nodos_grafo.append(aux)
+				if aux in self.nodos_grafo:
+					paquete_enviar= self.packs.create_pack_vacio('3')
 				
-				self.paquetes.append(paquete_enviar)
+				else:
+					self.nodos_grafo.append(aux)
+			
+					print(self.nodos_grafo)
+				
+					self.paquetes.append(paquete_enviar)
 	
 
 				#elimino el nodo muerto de mi lista de nodo activos
@@ -204,7 +228,9 @@ class Naranja():
 
 			elif paquete.tipo=='0':
 				
+				
 				if paquete.ip_naranja != self.mi_ip:
+				
 					#reviso ip a ver si gana el que llego y lo modifico en caso de 
 					if paquete.ip_naranja < self.mi_ip:
 						self.inicial=self.inicial+1		 
@@ -213,20 +239,27 @@ class Naranja():
 				
 
 				#ya me llego mi token inicial...				
-				else:
+				if self.inicial==2:
+					
 					#veo si soy el elegido y creo un token inicial con solicitud en caso de tenerla y si no solo lo paso a mi vecino
-					if self.inicial==6:
-						aux=['',0]
-						nodo=self.buscar_nodo()
-						if len(self.solicitudes):
-							aux=self.solicitudes.pop()
-							if nodo!= -1:
-								#para control con timer
-								self.llego=0
+					
+					aux=['',0]
+					
+					nodo=self.buscar_nodo()
+					if len(self.solicitudes):
+						aux=self.solicitudes.pop()
+						if nodo!= -1:
+							print('encontro')
+							
+							self.nodos_grafo.append([int(nodo), aux[0], aux[1]])
+							print(self.nodos_grafo)
+							#para control con timer
+							self.llego=0
 							paquete_enviar= self.packs.create_pack_asignacion('1' , int(nodo), aux[0], aux[1])
+							self.token=1
 
-				
-				self.paquetes.append(paquete_enviar)
+			
+							self.paquetes.append(paquete_enviar)
 				
 				
 
@@ -242,7 +275,8 @@ class Naranja():
 				#paquete auxiliar por si se pierde el que envie
 				paquete_respaldo=paquete
 				#print(paquete)
-				print('voy a enviar ' + str(paquete))
+				if str(chr(paquete[0]))!='3':
+					print('voy a enviar ' + str(paquete))
 				self.UDPServerSocket.sendto(paquete, self.vecino)
 
 			self.mutex.release()
@@ -254,7 +288,7 @@ class Naranja():
 
 			
 			
-	#thread que recibe paquetes
+		#thread que recibe paquetes
 	def recibir_naranja_naranja(self):
 		
 		while True:
@@ -271,53 +305,49 @@ class Naranja():
 				#paso de bytes a paquetes para procesar
 				paquete_inicial=self.packs.unpack_pack_inicial(paquete)
 				#llego mi paquete cierro el timer
-				if paquete_inicial.ip_naranja==self.mi_ip:
+				if self.token:
 					self.llego=1
 				
 				#print y proceso el paquete
-				print('me llego ')
-				self.packs.imprimir_inicial(paquete_inicial)
-				self.procesar_paquete(paquete_token,paquete)
+				print('me llego ' + str(paquete))
+				self.procesar_paquete(paquete_inicial,paquete)
 
 			#verifico si es paquete token
 			elif str(chr(paquete[0]))=='1':
 				#paso de bytes a paquetes para procesar
-				paquete_token=self.packs.unpack_pack_asignacion(paquete)
+				paquete_asignacion=self.packs.unpack_pack_asignacion(paquete)
 				#llego mi paquete cierro el timer
-				if paquete_token.ip_naranja==self.mi_ip:
+				if self.token:
 					self.llego=1
 				
 				#print y proceso el paquete
-				print('me llego ')
-				self.packs.imprimir_token(paquete_token)
+				self.packs.imprimir_token(paquete_asignacion)
 				
-				self.procesar_paquete(paquete_token,paquete)
+				self.procesar_paquete(paquete_asignacion,paquete)
 
 			elif str(chr(paquete[0]))=='2':
 				#paso de bytes a paquetes para procesar
-				paquete_token=self.packs.unpack_pack_complete(paquete)
+				paquete_complete=self.packs.unpack_pack_complete(paquete)
 				#llego mi paquete cierro el timer
-				if paquete_token.ip_naranja==self.mi_ip:
+				if self.token:
 					self.llego=1
 				
 				#print y proceso el paquete
-				print('me llego ')
-				self.packs.imprimir_token(paquete_token)
+				print('me llego ' + str(paquete))
 				
-				self.procesar_paquete(paquete_token,paquete)
+				self.procesar_paquete(paquete_complete,paquete)
 			
 			elif str(chr(paquete[0]))=='3':
 				#paso de bytes a paquetes para procesar
-				paquete_token=self.packs.unpack_pack_vacio(paquete)
+				paquete_vacio=self.packs.unpack_pack_vacio(paquete)
 				#llego mi paquete cierro el timer
-				if paquete_token.ip_naranja==self.mi_ip:
+				if self.token:
 					self.llego=1
 				
 				#print y proceso el paquete
-				print('me llego ')
-				self.packs.imprimir_token(paquete_token)
+				#print('me llego ' + str(paquete))
 				
-				self.procesar_paquete(paquete_token,paquete)
+				self.procesar_paquete(paquete_vacio,paquete)
 
 			self.mutex.release()
 
@@ -379,6 +409,9 @@ def main():
 		t3.join()
 		t1.join()
 		t2.join()
+
+	#n_naranja.leer_grafo()
+	#print(n_naranja.buscar_nodo())
 
 		#t3=Thread(target=n_naranja.input_consola).start()
 

@@ -35,13 +35,13 @@ class Paquetes():
 		pass
 
 	#creo cadena de bytes 
-	def create_pack_asignacion(self,tipo, token, ip_azul, nodo, puerto_azul):
-		return pack('ch15p15p', tipo.encode(), nodo, ip_azul.encode(), puerto_azul)
+	def create_pack_asignacion(self,tipo,nodo, ip_azul, puerto_azul):
+		return pack('ch15ph', tipo.encode(), nodo, ip_azul.encode(), puerto_azul)
 
 	#paso cadena de bytes a paquete python para procesar
 	def unpack_pack_asignacion(self, byte_pack):
-		paquete=paquete_token()
-		datos=unpack('ch15p15p', byte_pack)
+		paquete=paquete_asignacion()
+		datos=unpack('ch15ph', byte_pack)
 		paquete.tipo=datos[0].decode('utf-8')
 		paquete.ip_azul=datos[2].decode('utf-8')
 		paquete.nodo=datos[1]
@@ -54,7 +54,7 @@ class Paquetes():
 
 
 	def imprimir_token(self, paquete):
-		print(paquete.tipo + ' ' + paquete.token+' ' + paquete.ip_naranja+' ' + paquete.ip_azul+' ' + str(paquete.nodo)+' ' + paquete.subtipo+' ' + str(paquete.puerto_azul) )
+		print('me llego '+paquete.tipo + ' ' +  str(paquete.nodo)+' ' +paquete.ip_azul+' '+ str(paquete.puerto_azul) )
 		
 
 	# def unpack_pack_azul(self, byte_pack):
