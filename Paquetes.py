@@ -25,9 +25,11 @@ class paquete_vacio:
 
 
 
-class paquete_complete_azul:
+class paquete_azul:
 	def __init__(self):
-		self.tipo = '17'
+		self.tipo = ''
+		self.usl=''
+		self.sn=0
 		
 
 class paquete_complete:
@@ -35,11 +37,7 @@ class paquete_complete:
 		self.tipo = '2'
 
 
-class paquete_join_graph:
-	def __init__(self):
-		self.tipo = '14'
-		self.ip_azul=''
-		self.puerto_azul=''
+		
 		
 #clase encargada de procesar paquetes en bytes
 class Paquetes():
@@ -70,22 +68,15 @@ class Paquetes():
 		print('me llego '+paquete.tipo + ' ' +  str(paquete.nodo)+' ' +paquete.ip_azul+' '+ str(paquete.puerto_azul) )
 		
 
-	def unpack_pack_join_graph(self, byte_pack, ip, puerto):
-		paquete=paquete_join_graph()
-		datos=unpack('c',byte_pack)
+	def unpack_pack_azul(self, byte_pack):
+		paquete=paquete_azul()
+		datos=unpack('chc',byte_pack)
 		paquete.tipo=datos[0].decode('utf-8')
-		paquete.ip_azul=ip
-		paquete.puerto_azul=puerto
+		paquete.usl=datos[1].decode('utf-8')
+		paquete.sn=datos[2]
 	
 		return paquete
 
-
-	def unpack_pack_complete_azul(self, byte_pack):
-		paquete=paquete_complete_azul()
-		datos=unpack('c',byte_pack)
-		paquete.tipo=datos[0].decode('utf-8')
-	
-		return paquete
 
 	#creo cadena de bytes 
 	def create_pack_inicial(self, tipo, ip_naranja):
