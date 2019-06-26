@@ -16,8 +16,8 @@ class Naranja():
 
 		
 		#variables para conexion UDP
-		self.mi_ip='10.1.137.137'
-		self.mi_port   = 5005
+		self.mi_ip='localhost'
+		self.mi_port   = 8888
 		self.bufferSize  = 1024
 		self.UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
@@ -25,12 +25,16 @@ class Naranja():
 		# Bind to address and ip
 
 		self.UDPServerSocket.bind((self.mi_ip, self.mi_port))
-		self.vecino=('10.1.138.212', 8888)
+		self.vecino=(self.mi_ip, 5005)
+		
+		self.reenviar=0
+		self.sn=1
 
 
 		print("UDP server up and listening")
-		# self.primero=pack('ch', '0'.encode(), 1)
-		# self.paquetes.append(self.primero)
+		self.primero=pack('ch', '0'.encode(), self.sn)
+		self.paquetes.append(self.primero)
+		self.llego=1
 
 		
 
@@ -50,6 +54,7 @@ class Naranja():
 				if str(chr(paquete[0]))=='0':
 					paquete_aux=unpack('ch', paquete)
 					print('ENVIA SN  '+ str(paquete_aux[1]) + ' IP: ' +self.vecino[0]+ '  puerto: '+ str(self.vecino[1]) )
+					self.llego= self.llego+1
 
 				if str(chr(paquete[0]))=='1':
 					print('Responde Ack' + 'IP: ' +self.vecino[0]+ 'puerto: '+ str(self.vecino[1]) )
@@ -86,6 +91,8 @@ class Naranja():
 			paquete = bytesAddressPair[0]
 			address=bytesAddressPair[1]
 			clientIP  = "Client IP Address:{}".format(address)
+			paquete_inicial=self.unpack_pack_0(paquete)
+			
 
 
 			self.mutex.acquire()
@@ -94,24 +101,35 @@ class Naranja():
 			#verficio si es token inicial
 			if str(chr(paquete[0]))=='0':
 				#paso de bytes a paquetes para procesar
-				paquete_inicial=self.unpack_pack_0(paquete)
+				
 				
 				
 				#print y proceso el paquete
-				print('Recibi SN: ' + paquete_inicial+ ClientIP[0]+ClientIP[1])
+				print('Recibi SN: ' + str(paquete_inicial[1])+ clientIP)
 
-				paquete=pack('c', '1')
+				paquete=pack('ch', '1'.encode(), paquete_inicial[1])
 				self.paquetes.append(paquete)
 
 			#verifico si es paquete token
-			elif str(chr(paquete[0]))=='1':
+			elif str(chr(paquete[0]))=='1' and paquete_inicial[1]==self.sn:
 				
-				print('Recibi ACK: ' + ClientIP)
+				print('Recibi ACK: ' + clientIP)
+				self.llego=self.llego-1
+				self.sn=self.sn+1
 				#print y proceso el paquete
 
 
 
 			self.mutex.release()
+
+	def timer(self):
+		while True:
+			if self.llego!=0:
+				time.sleep(60)
+				self.reenviar=1
+
+
+
 
 
 
