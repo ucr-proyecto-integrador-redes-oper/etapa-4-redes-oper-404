@@ -60,7 +60,7 @@ class Naranja():
 		# Bind to address and ip
 
 		self.UDPServerSocket.bind((self.mi_ip, self.mi_port))
-		self.vecino=('10.1.137.41', 3939)
+		self.vecino=('10.1.137.40', 9999)
 
 
 
@@ -207,7 +207,7 @@ class Naranja():
 						for temp in self.nodos_grafo:
 							if int(i) in temp:
 								existe=True
-								paquete_azul=pack('BhBhih', 0, self.sn_azul,16,  temp[0] , int(IPv4Address(temp[1])), temp[2])
+								paquete_azul=pack('BhBhIh', 0, self.sn_azul,16,  temp[0] , int(IPv4Address(temp[1])), temp[2])
 								paquete_send=[paquete_azul, (paquete.ip_azul, paquete.puerto_azul), self.sn_azul]
 								self.paquetes_azules.append(paquete_send)
 								self.llego_azul= self.llego_azul+1

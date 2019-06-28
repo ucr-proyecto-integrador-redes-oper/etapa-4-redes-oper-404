@@ -48,14 +48,14 @@ class Paquetes():
 
 	#creo cadena de bytes 
 	def create_pack_asignacion(self,tipo,nodo, ip_azul, puerto_azul):
-		return pack('Bhih', tipo, nodo, ip_azul, puerto_azul)
+		return pack('BhIh', tipo, nodo, ip_azul, puerto_azul)
 
 	#paso cadena de bytes a paquete python para procesar
 	def unpack_pack_asignacion(self, byte_pack):
 		paquete=paquete_asignacion()
-		datos=unpack('Bhih', byte_pack)
+		datos=unpack('BhIh', byte_pack)
 		paquete.tipo=datos[0]
-		paquete.ip_azul=IPv4Address(datos[2])
+		paquete.ip_azul=str(IPv4Address(datos[2]))
 		paquete.nodo=datos[1]
 		paquete.puerto_azul=datos[3]
 		return paquete
@@ -63,11 +63,11 @@ class Paquetes():
 
 	
 	def imprimir_inicial(self, paquete):
-		print(str(paquete.tipo)+ ' '+paquete.ip_naranja+' ' + paquete.elegido)
+		print(str(paquete.tipo)+ ' '+str(paquete.ip_naranja)+' ' + paquete.elegido)
 
 
 	def imprimir_token(self, paquete):
-		print('me llego '+str(paquete.tipo)+ ' ' +  str(paquete.nodo)+' ' +paquete.ip_azul+' '+ str(paquete.puerto_azul) )
+		print('me llego '+str(paquete.tipo)+ ' ' +  str(paquete.nodo)+' ' +str(paquete.ip_azul)+' '+ str(paquete.puerto_azul) )
 
 	def unpack_pack_azul(self, byte_pack):
 		paquete=paquete_azul()
@@ -81,13 +81,13 @@ class Paquetes():
 
 	#creo cadena de bytes 
 	def create_pack_inicial(self, tipo, ip_naranja):
-		return  pack('Bi', tipo, ip_naranja)
+		return  pack('BI', tipo, ip_naranja)
 
 	
 	#paso cadena de bytes a paquete python para procesar
 	def unpack_pack_inicial(self, byte_pack):
 		paquete=paquete_inicial()
-		datos=unpack('Bi', byte_pack)
+		datos=unpack('BI', byte_pack)
 		paquete.tipo=datos[0]
 		paquete.ip_naranja=datos[1]
 		return paquete
