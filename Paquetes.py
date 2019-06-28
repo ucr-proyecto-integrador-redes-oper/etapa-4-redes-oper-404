@@ -1,4 +1,5 @@
 from struct import *
+from ipaddress import*
 
 #paquetes estilo python para facilidad de procesamiento
 #paquetes estilo python para facilidad de procesamiento
@@ -8,7 +9,7 @@ class paquete_asignacion:
 	def __init__(self):
 		self.tipo = 0
 		self.ip_azul=''
-		self.puerto_azul=''
+		self.puerto_azul=0
 		self.nodo=0
 
 
@@ -17,7 +18,7 @@ class paquete_inicial:
 	def __init__(self):
 		self.tipo = 0
 		self.ip_naranja=''
-		self.elegido=''
+		self.elegido=0
 
 class paquete_vacio:
 	def __init__(self):
@@ -28,7 +29,7 @@ class paquete_vacio:
 class paquete_azul:
 	def __init__(self):
 		self.tipo = 0
-		self.usl=''
+		self.usl=0
 		self.sn=0
 		
 
@@ -47,14 +48,14 @@ class Paquetes():
 
 	#creo cadena de bytes 
 	def create_pack_asignacion(self,tipo,nodo, ip_azul, puerto_azul):
-		return pack('Bh16ph', tipo, nodo, ip_azul.encode(), puerto_azul)
+		return pack('Bhih', tipo, nodo, ip_azul, puerto_azul)
 
 	#paso cadena de bytes a paquete python para procesar
 	def unpack_pack_asignacion(self, byte_pack):
 		paquete=paquete_asignacion()
-		datos=unpack('Bh16ph', byte_pack)
+		datos=unpack('Bhih', byte_pack)
 		paquete.tipo=datos[0]
-		paquete.ip_azul=datos[2].decode('utf-8')
+		paquete.ip_azul=IPv4Address(datos[2])
 		paquete.nodo=datos[1]
 		paquete.puerto_azul=datos[3]
 		return paquete
@@ -80,15 +81,15 @@ class Paquetes():
 
 	#creo cadena de bytes 
 	def create_pack_inicial(self, tipo, ip_naranja):
-		return  pack('B16p', tipo, ip_naranja.encode())
+		return  pack('Bi', tipo, ip_naranja)
 
 	
 	#paso cadena de bytes a paquete python para procesar
 	def unpack_pack_inicial(self, byte_pack):
 		paquete=paquete_inicial()
-		datos=unpack('B16p', byte_pack)
+		datos=unpack('Bi', byte_pack)
 		paquete.tipo=datos[0]
-		paquete.ip_naranja=datos[1].decode('utf-8')
+		paquete.ip_naranja=datos[1]
 		return paquete
 
 

@@ -5,6 +5,9 @@ from Paquetes import *
 import socket
 import sys
 import time
+from ipaddress import*
+
+
 
 class Naranja():
 	
@@ -47,8 +50,8 @@ class Naranja():
 		
 
 		#variables para conexion UDP
-		self.mi_ip='10.1.137.184'
-		self.mi_port   = 8888
+		self.mi_ip='10.1.137.137'
+		self.mi_port   = 5005
 		self.bufferSize  = 1024
 		self.UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
@@ -57,7 +60,7 @@ class Naranja():
 		# Bind to address and ip
 
 		self.UDPServerSocket.bind((self.mi_ip, self.mi_port))
-		self.vecino=('10.1.137.184', 7777)
+		self.vecino=('10.1.137.41', 3939)
 
 
 
@@ -123,7 +126,7 @@ class Naranja():
 				break
 		
 		#se crea el token inicial y se pone llego=0 para esperar que llegue con el timer
-		paquete=self.packs.create_pack_inicial(0, self.mi_ip)
+		paquete=self.packs.create_pack_inicial(0, int(IPv4Address(self.mi_ip)))
 		self.llego_naranja=0
 		
 
@@ -161,7 +164,7 @@ class Naranja():
 					print(self.nodos_grafo)
 					#para control con timer
 					self.llego_naranja=0
-					paquete_enviar= self.packs.create_pack_asignacion(1 , int(nodo) , aux[0], aux[1])
+					paquete_enviar= self.packs.create_pack_asignacion(1 , int(nodo) , int(IPv4Address(aux[0])), aux[1])
 					self.token=1
 					#paquete_azul= self.packs.create_pack_asignacion()
 
@@ -204,7 +207,7 @@ class Naranja():
 						for temp in self.nodos_grafo:
 							if int(i) in temp:
 								existe=True
-								paquete_azul=pack('BhBh16ph', 0,self.sn_azul,16,  temp[0] ,temp[1].encode(), temp[2])
+								paquete_azul=pack('BhBhih', 0, self.sn_azul,16,  temp[0] , int(IPv4Address(temp[1])), temp[2])
 								paquete_send=[paquete_azul, (paquete.ip_azul, paquete.puerto_azul), self.sn_azul]
 								self.paquetes_azules.append(paquete_send)
 								self.llego_azul= self.llego_azul+1
@@ -257,10 +260,10 @@ class Naranja():
 		elif paquete.tipo==0:
 			
 			
-			if paquete.ip_naranja != self.mi_ip:
+			if paquete.ip_naranja !=  int(IPv4Address(self.mi_ip)):
 			
 				#reviso ip a ver si gana el que llego y lo modifico en caso de 
-				if paquete.ip_naranja < self.mi_ip:
+				if paquete.ip_naranja <  int(IPv4Address(self.mi_ip)):
 					self.inicial=self.inicial+1		 
 						
 				self.paquetes_naranjas.append(paquete_enviar)
@@ -283,7 +286,7 @@ class Naranja():
 						print(self.nodos_grafo)
 						#para control con timer
 						self.llego_naranja=0
-						paquete_enviar= self.packs.create_pack_asignacion(1 , int(nodo), aux[0], aux[1])
+						paquete_enviar= self.packs.create_pack_asignacion(1 , int(nodo), int(IPv4Address(aux[0])), aux[1])
 						self.token=1
 
 		
