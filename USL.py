@@ -16,25 +16,26 @@ class Naranja():
 
 		
 		#variables para conexion UDP
-		self.mi_ip='localhost'
-		self.mi_port   = 8888
-		self.bufferSize  = 1024
+		self.mi_ip='10.1.137.137'
+		self.mi_port   = 3939
+		self.bufferSize  = 1035
 		self.UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
 
 		# Bind to address and ip
 
 		self.UDPServerSocket.bind((self.mi_ip, self.mi_port))
-		self.vecino=(self.mi_ip, 5005)
+		#self.vecino=('10.1.137.154', 2909)
 		
 		self.reenviar=0
 		self.sn=1
 
 
 		print("UDP server up and listening")
-		self.primero=pack('ch', '0'.encode(), self.sn)
-		self.paquetes.append(self.primero)
-		self.llego=1
+		#self.primero=pack('ch4p', '0'.encode(), self.sn,'hola'.encode())
+		#aquete_nuevo = [self.primero, self.vecino]
+		#self.paquetes.append(paquete_nuevo)
+		#self.llego=1
 
 		
 
@@ -51,15 +52,15 @@ class Naranja():
 			if len(self.paquetes):
 				paquete=self.paquetes.pop()
 				#print(paquete)
-				if str(chr(paquete[0]))=='0':
-					paquete_aux=unpack('ch', paquete)
+				if str(chr(paquete[0][0]))=='0':
+					paquete_aux=unpack('ch4p', paquete[0])
 					print('ENVIA SN  '+ str(paquete_aux[1]) + ' IP: ' +self.vecino[0]+ '  puerto: '+ str(self.vecino[1]) )
 					self.llego= self.llego+1
 
-				if str(chr(paquete[0]))=='1':
+				if str(chr(paquete[0][0]))=='1':
 					print('Responde Ack' + 'IP: ' +self.vecino[0]+ 'puerto: '+ str(self.vecino[1]) )
 				
-				self.UDPServerSocket.sendto(paquete, self.vecino)
+				self.UDPServerSocket.sendto(paquete[0], paquete[1])
 
 			self.mutex.release()
 			
@@ -88,10 +89,12 @@ class Naranja():
 
 			bytesAddressPair = self.UDPServerSocket.recvfrom(self.bufferSize)
 
+
 			paquete = bytesAddressPair[0]
 			address=bytesAddressPair[1]
 			clientIP  = "Client IP Address:{}".format(address)
-			paquete_inicial=self.unpack_pack_0(paquete)
+		
+			paquete_nuevo = []
 			
 
 
@@ -99,20 +102,20 @@ class Naranja():
 
 
 			#verficio si es token inicial
-			if str(chr(paquete[0]))=='0':
+			if paquete[0]==0:
 				#paso de bytes a paquetes para procesar
 				
 				
 				
 				#print y proceso el paquete
-				print('Recibi SN: ' + str(paquete_inicial[1])+ clientIP)
+				print('Recibi SN: ' + str(paquete)+ clientIP)
 
-				paquete=pack('ch', '1'.encode(), paquete_inicial[1])
-				self.paquetes.append(paquete)
+				paquete=pack('Bh', 1, paquete[1])
+				paquete_nuevo=[paquete, address]
+				self.paquetes.append(paquete_nuevo)
 
 			#verifico si es paquete token
-			elif str(chr(paquete[0]))=='1' and paquete_inicial[1]==self.sn:
-				
+			elif paquete[0]==1:
 				print('Recibi ACK: ' + clientIP)
 				self.llego=self.llego-1
 				self.sn=self.sn+1
