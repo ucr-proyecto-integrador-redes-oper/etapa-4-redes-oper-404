@@ -6,6 +6,7 @@ import socket
 import sys
 import time
 from ipaddress import*
+from Util import *
 
 
 
@@ -50,7 +51,7 @@ class Naranja():
 		
 
 		#variables para conexion UDP
-		self.mi_ip='10.1.137.137'
+		self.mi_ip='10.1.138.239'
 		self.mi_port   = 5005
 		self.bufferSize  = 1024
 		self.UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
@@ -60,7 +61,7 @@ class Naranja():
 		# Bind to address and ip
 
 		self.UDPServerSocket.bind((self.mi_ip, self.mi_port))
-		self.vecino=('10.1.137.40', 9999)
+		self.vecino=('10.1.138.41', 9999)
 
 
 
@@ -128,6 +129,10 @@ class Naranja():
 		#se crea el token inicial y se pone llego=0 para esperar que llegue con el timer
 		paquete=self.packs.create_pack_inicial(0, int(IPv4Address(self.mi_ip)))
 		self.llego_naranja=0
+		valor=int(IPv4Address(self.mi_ip))
+		print(str(valor))
+		print(IPv4Address(valor))
+		print(str(IPv4Address(valor)))
 		
 
 		#se lee el grafo al inicio
@@ -259,38 +264,43 @@ class Naranja():
 
 		elif paquete.tipo==0:
 			
+			print(str(int(IPv4Address(paquete.ip_naranja))))
+			print(str(int(IPv4Address(self.mi_ip))))
 			
-			if paquete.ip_naranja !=  int(IPv4Address(self.mi_ip)):
+			if int(IPv4Address(paquete.ip_naranja))!=  int(IPv4Address(self.mi_ip)):
 			
 				#reviso ip a ver si gana el que llego y lo modifico en caso de 
-				if paquete.ip_naranja <  int(IPv4Address(self.mi_ip)):
+				if int(IPv4Address(paquete.ip_naranja)) <  int(IPv4Address(self.mi_ip)):
 					self.inicial=self.inicial+1		 
 						
 				self.paquetes_naranjas.append(paquete_enviar)
 			
 
 			#ya me llego mi token inicial...				
-			if self.inicial==1:
+			elif int(IPv4Address(paquete.ip_naranja)) ==  int(IPv4Address(self.mi_ip)):
+				print('entro')
+				if self.inicial==1:
 				
 				#veo si soy el elegido y creo un token inicial con solicitud en caso de tenerla y si no solo lo paso a mi vecino
 				
-				aux=['',0]
+					aux=['',0]
 				
-				nodo=self.buscar_nodo()
-				if len(self.solicitudes):
-					aux=self.solicitudes.pop()
-					if nodo!= -1:
-						print('encontro')
+					nodo=self.buscar_nodo()
+					if len(self.solicitudes):
+						aux=self.solicitudes.pop()
+						if nodo!= -1:
+							print('encontro')
 						
-						self.nodos_grafo.append([int(nodo), aux[0], aux[1]])
-						print(self.nodos_grafo)
-						#para control con timer
-						self.llego_naranja=0
-						paquete_enviar= self.packs.create_pack_asignacion(1 , int(nodo), int(IPv4Address(aux[0])), aux[1])
-						self.token=1
+							self.nodos_grafo.append([int(nodo), aux[0], aux[1]])
+							print(self.nodos_grafo)
+							#para control con timer
+							self.llego_naranja=0
+							paquete_enviar= self.packs.create_pack_asignacion(1 , int(nodo), int(IPv4Address(aux[0])), aux[1])
+							self.token=1
 
 		
-						self.paquetes_naranjas.append(paquete_enviar)
+							self.paquetes_naranjas.append(paquete_enviar)
+				
 				
 				
 
@@ -341,11 +351,11 @@ class Naranja():
 			#verficio si es token inicial
 			if paquete[0]==0:
 				#paso de bytes a paquetes para procesar
-				paquete_inicial=self.packs.unpack_pack_inicial(paquete)
-				
-				
-				#print y proceso el paquete
 				print('me llego ' + str(paquete))
+
+				paquete_inicial =self.packs.unpack_pack_inicial(paquete)	
+				#print y proceso el paquete
+				#print('me llego ' + str(paquete))
 				self.procesar_paquete_naranja(paquete_inicial,paquete)
 
 			#verifico si es paquete token

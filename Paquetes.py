@@ -17,8 +17,8 @@ class paquete_asignacion:
 class paquete_inicial:
 	def __init__(self):
 		self.tipo = 0
-		self.ip_naranja=''
-		self.elegido=0
+		self.ip_naranja=0
+		
 
 class paquete_vacio:
 	def __init__(self):
@@ -63,7 +63,7 @@ class Paquetes():
 
 	
 	def imprimir_inicial(self, paquete):
-		print(str(paquete.tipo)+ ' '+str(paquete.ip_naranja)+' ' + paquete.elegido)
+		print(str(paquete.tipo)+ ' '+str(paquete.ip_naranja))
 
 
 	def imprimir_token(self, paquete):
@@ -81,15 +81,18 @@ class Paquetes():
 
 	#creo cadena de bytes 
 	def create_pack_inicial(self, tipo, ip_naranja):
-		return  pack('BI', tipo, ip_naranja)
+		data=pack('B',tipo)
+		data+=pack('I',ip_naranja)
+		return data
 
 	
 	#paso cadena de bytes a paquete python para procesar
 	def unpack_pack_inicial(self, byte_pack):
+		ip=unpack('I',byte_pack[1:5])
 		paquete=paquete_inicial()
-		datos=unpack('BI', byte_pack)
-		paquete.tipo=datos[0]
-		paquete.ip_naranja=datos[1]
+		paquete.tipo=byte_pack[0]
+		paquete.ip_naranja=str(IPv4Address(IPv4Address(ip[0])))
+	
 		return paquete
 
 
@@ -101,8 +104,7 @@ class Paquetes():
 	#paso cadena de bytes a paquete python para procesar
 	def unpack_pack_complete(self, byte_pack):
 		paquete=paquete_complete()
-		datos=unpack('B', byte_pack)
-		paquete.tipo=datos[0]
+		paquete.tipo=byte_pack[0]
 		return paquete
 
 	#creo cadena de bytes 
@@ -113,8 +115,7 @@ class Paquetes():
 	#paso cadena de bytes a paquete python para procesar
 	def unpack_pack_vacio(self, byte_pack):
 		paquete=paquete_vacio()
-		datos=unpack('B', byte_pack)
-		paquete.tipo=datos[0]
+		paquete.tipo=byte_pack[0]
 		return paquete
 
 		
