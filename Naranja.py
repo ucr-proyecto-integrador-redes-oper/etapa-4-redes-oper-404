@@ -16,7 +16,7 @@ class Naranja():
 		self.completos=0
 
 		#cola de solicitudes de nodos azules
-		self.solicitudes = []
+		self.solicitudes = [['255.234.234.255', 6666], ['255.234.234.255', 6663], ['255.234.234.255', 6662],['255.234.234.255', 6661]]
 		#cola de nodos muertos de nodos azules
 		self.muertos=[['255.234.234.255',1, 6666], ['253.234.234.255',2, 6667], ['255.234.234.222',3, 7666]]
 		
@@ -51,17 +51,21 @@ class Naranja():
 		
 
 		#variables para conexion UDP
-		self.mi_ip='10.1.137.50'
+		self.mi_ip='10.1.137.41'
 		self.mi_port   = 9999
+		self.port_azul   = 5005
+
 		self.bufferSize  = 1035
 		self.UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+		self.UDPServerazul = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
 
 
 		# Bind to address and ip
 
 		self.UDPServerSocket.bind((self.mi_ip, self.mi_port))
-		self.vecino=('10.1.137.41', 9999)
+		self.UDPServerazul.bind((self.mi_ip, self.port_azul))
+		self.vecino=('10.1.137.40', 9999)
 
 
 
@@ -269,7 +273,7 @@ class Naranja():
 			if int(IPv4Address(paquete.ip_naranja))!=  int(IPv4Address(self.mi_ip)):
 			
 				#reviso ip a ver si gana el que llego y lo modifico en caso de 
-				if int(IPv4Address(paquete.ip_naranja)) <  int(IPv4Address(self.mi_ip)):
+				if int(IPv4Address(paquete.ip_naranja)) > int(IPv4Address(self.mi_ip)):
 					self.inicial=self.inicial+1	
 					 
 						
@@ -388,16 +392,16 @@ class Naranja():
 			if len(self.paquetes_azules):
 				paquete=self.paquetes_azules.pop()
 				if paquete[2]==-1:
-					self.UDPServerSocket.sendto(paquete[1], paquete[2])
+					self.UDPServerazul.sendto(paquete[1], paquete[2])
 
 				elif paquete[2]==self.sn_azul:
 					paquete_respaldo=paquete
 				
-					self.UDPServerSocket.sendto(paquete[1], paquete[2])
+					self.UDPServerazul.sendto(paquete[1], paquete[2])
 
 					while paquete[2]==self.sn_azul:
 						if self.reenviar_azul==1:
-							self.UDPServerSocket.sendto(paquete_respaldo[1], paquete_respaldo[2])
+							self.UDPServerazul.sendto(paquete_respaldo[1], paquete_respaldo[2])
 							self.reenviar_azul=0
 
 
@@ -412,12 +416,12 @@ class Naranja():
 
 			#paquete=secure_udp
 
-			bytesAddressPair = self.UDPServerSocket.recvfrom(self.bufferSize)
+			bytesAddressPair = self.UDPServerazul.recvfrom(self.bufferSize)
 
 			paquete = bytesAddressPair[0]
 			addr=bytesAddressPair[1]
 
-			paquete_azul=self.packs.unpack_pack_zul(paquete)
+			paquete_azul=self.packs.unpack_pack_azul(paquete)
 
 
 			self.mutex_azul.acquire()
@@ -530,18 +534,27 @@ def main():
 	n_naranja = Naranja()
 	
 	if n_naranja.inicio():
-		t1=Thread(target=n_naranja.recibir_naranja_naranja)
-		t2=Thread(target=n_naranja.enviar_naranja_naranja)
+		t5=Thread(target=n_naranja.recibir_azul_naranja)
+		t6=Thread(target=n_naranja.enviar_naranja_azul)
+		t7=Thread(target=n_naranja.timer_azul)
 		t3=Thread(target=n_naranja.timer_naranja)
 		t4=Thread(target=n_naranja.verifica_inicial)
+		t1=Thread(target=n_naranja.recibir_naranja_naranja)
+		t2=Thread(target=n_naranja.enviar_naranja_naranja)
 		t1.start()
 		t2.start()
 		t3.start()
 		t4.start()
+		t5.start()
+		t6.start()
+		t7.start()
 		t3.join()
 		t1.join()
 		t2.join()
 		t4:join()
+		t5.join()
+		t6.join()
+		t7.join()
 
 	#n_naranja.leer_grafo()
 	#print(n_naranja.buscar_nodo())
