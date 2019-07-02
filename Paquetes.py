@@ -48,7 +48,7 @@ class Paquetes():
 
 	#creo cadena de bytes 
 	def create_pack_asignacion(self,tipo,nodo, ip_azul, puerto_azul):
-		return pack('BhIh', tipo, nodo, ip_azul, puerto_azul)
+		return pack('Bh>Ih', tipo, nodo, ip_azul, puerto_azul)
 
 	#paso cadena de bytes a paquete python para procesar
 	def unpack_pack_asignacion(self, byte_pack):
@@ -82,17 +82,15 @@ class Paquetes():
 	#creo cadena de bytes 
 	def create_pack_inicial(self, tipo, ip_naranja):
 		data=pack('B',tipo)
-		data+=pack('I',ip_naranja)
+		data+=pack('>I',ip_naranja)
 		return data
 
 	
 	#paso cadena de bytes a paquete python para procesar
 	def unpack_pack_inicial(self, byte_pack):
-		ip=unpack('I',byte_pack[1:5])
 		paquete=paquete_inicial()
 		paquete.tipo=byte_pack[0]
-		paquete.ip_naranja=str(IPv4Address(IPv4Address(ip[0])))
-	
+		paquete.ip_naranja=str(IPv4Address(byte_pack[1:5]))
 		return paquete
 
 

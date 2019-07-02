@@ -16,7 +16,7 @@ class Naranja():
 		self.completos=0
 
 		#cola de solicitudes de nodos azules
-		self.solicitudes = [['255.234.234.255', 7777]]
+		self.solicitudes = []
 		#cola de nodos muertos de nodos azules
 		self.muertos=[['255.234.234.255',1, 6666], ['253.234.234.255',2, 6667], ['255.234.234.222',3, 7666]]
 		
@@ -51,9 +51,9 @@ class Naranja():
 		
 
 		#variables para conexion UDP
-		self.mi_ip='10.1.138.239'
-		self.mi_port   = 5005
-		self.bufferSize  = 1024
+		self.mi_ip='10.1.137.50'
+		self.mi_port   = 9999
+		self.bufferSize  = 1035
 		self.UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
 
@@ -61,7 +61,7 @@ class Naranja():
 		# Bind to address and ip
 
 		self.UDPServerSocket.bind((self.mi_ip, self.mi_port))
-		self.vecino=('10.1.138.41', 9999)
+		self.vecino=('10.1.137.41', 9999)
 
 
 
@@ -264,42 +264,21 @@ class Naranja():
 
 		elif paquete.tipo==0:
 			
-			print(str(int(IPv4Address(paquete.ip_naranja))))
-			print(str(int(IPv4Address(self.mi_ip))))
+		
 			
 			if int(IPv4Address(paquete.ip_naranja))!=  int(IPv4Address(self.mi_ip)):
 			
 				#reviso ip a ver si gana el que llego y lo modifico en caso de 
 				if int(IPv4Address(paquete.ip_naranja)) <  int(IPv4Address(self.mi_ip)):
-					self.inicial=self.inicial+1		 
+					self.inicial=self.inicial+1	
+					 
 						
 				self.paquetes_naranjas.append(paquete_enviar)
 			
 
 			#ya me llego mi token inicial...				
-			elif int(IPv4Address(paquete.ip_naranja)) ==  int(IPv4Address(self.mi_ip)):
-				print('entro')
-				if self.inicial==1:
-				
-				#veo si soy el elegido y creo un token inicial con solicitud en caso de tenerla y si no solo lo paso a mi vecino
-				
-					aux=['',0]
-				
-					nodo=self.buscar_nodo()
-					if len(self.solicitudes):
-						aux=self.solicitudes.pop()
-						if nodo!= -1:
-							print('encontro')
-						
-							self.nodos_grafo.append([int(nodo), aux[0], aux[1]])
-							print(self.nodos_grafo)
-							#para control con timer
-							self.llego_naranja=0
-							paquete_enviar= self.packs.create_pack_asignacion(1 , int(nodo), int(IPv4Address(aux[0])), aux[1])
-							self.token=1
+			
 
-		
-							self.paquetes_naranjas.append(paquete_enviar)
 				
 				
 				
@@ -509,6 +488,41 @@ class Naranja():
 				self.reenviar_azul=1
 
 
+	def verifica_inicial(self):
+		while True:
+			
+			if self.inicial==1:
+				#veo si soy el elegido y creo un token inicial con solicitud en caso de tenerla y si no solo lo paso a mi vecino
+				
+				aux=['',0]
+				
+				nodo=self.buscar_nodo()
+				if len(self.solicitudes):
+					aux=self.solicitudes.pop()
+					if nodo!= -1:
+						print('encontro')
+						
+						self.nodos_grafo.append([int(nodo), aux[0], aux[1]])
+						print(self.nodos_grafo)
+						#para control con timer
+						self.llego_naranja=0
+						paquete_enviar= self.packs.create_pack_asignacion(1 , int(nodo), int(IPv4Address(aux[0])), aux[1])
+						self.token=1
+
+		
+						self.paquetes_naranjas.append(paquete_enviar)
+						break
+				else:
+				
+					paquete_enviar= self.packs.create_pack_vacio(3)
+					self.token=0
+					self.paquetes_naranjas.append(paquete_enviar)
+				
+					break
+
+					
+
+
 
 
 			
@@ -519,12 +533,15 @@ def main():
 		t1=Thread(target=n_naranja.recibir_naranja_naranja)
 		t2=Thread(target=n_naranja.enviar_naranja_naranja)
 		t3=Thread(target=n_naranja.timer_naranja)
+		t4=Thread(target=n_naranja.verifica_inicial)
 		t1.start()
 		t2.start()
 		t3.start()
+		t4.start()
 		t3.join()
 		t1.join()
 		t2.join()
+		t4:join()
 
 	#n_naranja.leer_grafo()
 	#print(n_naranja.buscar_nodo())
