@@ -16,7 +16,7 @@ class Naranja():
 		self.completos=0
 
 		#cola de solicitudes de nodos azules
-		self.solicitudes = [['255.234.234.255', 6666], ['255.234.234.255', 6663], ['255.234.234.255', 6662],['255.234.234.255', 6661]]
+		self.solicitudes = []
 		#cola de nodos muertos de nodos azules
 		self.muertos=[['255.234.234.255',1, 6666], ['253.234.234.255',2, 6667], ['255.234.234.222',3, 7666]]
 		
@@ -54,7 +54,6 @@ class Naranja():
 		self.mi_ip='10.1.137.41'
 		self.mi_port   = 9999
 		self.port_azul   = 5005
-
 		self.bufferSize  = 1035
 		self.UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 		self.UDPServerazul = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
@@ -65,7 +64,7 @@ class Naranja():
 
 		self.UDPServerSocket.bind((self.mi_ip, self.mi_port))
 		self.UDPServerazul.bind((self.mi_ip, self.port_azul))
-		self.vecino=('10.1.137.40', 9999)
+		self.vecino=('10.1.138.210', 9999)
 
 
 
@@ -480,7 +479,7 @@ class Naranja():
 	def timer_naranja(self):
 		while True:
 			if self.llego_naranja==0:
-				time.sleep(60)
+				time.sleep(5)
 				self.reenviar_naranja=1
 
 
@@ -495,7 +494,7 @@ class Naranja():
 	def verifica_inicial(self):
 		while True:
 			
-			if self.inicial==1:
+			if self.inicial==2:
 				#veo si soy el elegido y creo un token inicial con solicitud en caso de tenerla y si no solo lo paso a mi vecino
 				
 				aux=['',0]
