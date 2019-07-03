@@ -6,7 +6,7 @@ import socket
 import sys
 import time
 from ipaddress import*
-from Util import *
+
 
 
 
@@ -51,8 +51,8 @@ class Naranja():
 		
 
 		#variables para conexion UDP
-		self.mi_ip='10.1.137.41'
-		self.mi_port   = 9999
+		self.mi_ip= '10.127.127.1'
+		self.mi_port = 9999
 		self.port_azul   = 5005
 		self.bufferSize  = 1035
 		self.UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
@@ -64,7 +64,7 @@ class Naranja():
 
 		self.UDPServerSocket.bind((self.mi_ip, self.mi_port))
 		self.UDPServerazul.bind((self.mi_ip, self.port_azul))
-		self.vecino=('10.1.138.210', 9999)
+		self.vecino=(self.mi_ip, 9999)
 
 
 
@@ -391,16 +391,16 @@ class Naranja():
 			if len(self.paquetes_azules):
 				paquete=self.paquetes_azules.pop()
 				if paquete[2]==-1:
-					self.UDPServerazul.sendto(paquete[1], paquete[2])
+					self.UDPServerazul.sendto(paquete[0], paquete[1])
 
 				elif paquete[2]==self.sn_azul:
 					paquete_respaldo=paquete
 				
-					self.UDPServerazul.sendto(paquete[1], paquete[2])
+					self.UDPServerazul.sendto(paquete[0], paquete[1])
 
 					while paquete[2]==self.sn_azul:
 						if self.reenviar_azul==1:
-							self.UDPServerazul.sendto(paquete_respaldo[1], paquete_respaldo[2])
+							self.UDPServerazul.sendto(paquete_respaldo[0], paquete_respaldo[1])
 							self.reenviar_azul=0
 
 
@@ -421,6 +421,7 @@ class Naranja():
 			addr=bytesAddressPair[1]
 
 			paquete_azul=self.packs.unpack_pack_azul(paquete)
+			print('me llego ' + str(paquete))
 
 
 			self.mutex_azul.acquire()
@@ -435,6 +436,10 @@ class Naranja():
 					aux=[addr[0], addr[1]]
 
 					self.solicitudes.append(aux)
+					print(self.solicitudes)
+					print(str(paquete_azul.sn))
+					print(paquete_azul.sn)
+
 
 					ack=pack('Bh', 1,paquete_azul.sn)
 					paquete_send=[ack, addr, -1]

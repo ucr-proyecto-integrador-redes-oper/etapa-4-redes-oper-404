@@ -70,11 +70,10 @@ class Paquetes():
 
 	def unpack_pack_azul(self, byte_pack):
 		paquete=paquete_azul()
-		datos=unpack('BhB',byte_pack)
-		paquete.tipo=datos[0]
-		paquete.usl=datos[1]
-		paquete.sn=datos[2]
-	
+		paquete.tipo=byte_pack[3]
+		paquete.usl=byte_pack[0]
+		sn=unpack('h',byte_pack[1:3])
+		paquete.sn=sn[0]
 		return paquete
 
 
