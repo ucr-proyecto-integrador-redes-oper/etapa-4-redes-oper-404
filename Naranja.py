@@ -17,6 +17,7 @@ class Naranja():
 
 		#cola de solicitudes de nodos azules
 		self.solicitudes = []
+		self.solicitudes_listas=[]
 		#cola de nodos muertos de nodos azules
 		self.muertos=[['255.234.234.255',1, 6666], ['253.234.234.255',2, 6667], ['255.234.234.222',3, 7666]]
 
@@ -24,6 +25,7 @@ class Naranja():
 		self.completo=0
 		self.token=0
 		self.inicial=0
+		self.azules=0
 
 		#lista de nodos activos'
 		self.nodos_grafo = []
@@ -46,12 +48,13 @@ class Naranja():
 
 		self.reenviar_azul=0
 		self.llego_azul=0
+		self.mi_complete=0
 
 
 
 
 		#variables para conexion UDP
-		self.mi_ip= '10.1.138.77'
+		self.mi_ip= '10.1.137.41'
 		self.mi_port = 9999
 		self.port_azul   = 5005
 		self.bufferSize  = 1035
@@ -64,7 +67,7 @@ class Naranja():
 
 		self.UDPServerSocket.bind((self.mi_ip, self.mi_port))
 		self.UDPServerazul.bind((self.mi_ip, self.port_azul))
-		self.vecino=('10.1.138.76', 9999)
+		self.vecino=('10.1.137.50', 9999)
 
 
 
@@ -157,7 +160,7 @@ class Naranja():
 
 
 		#en caso de disponibilidad del token
-		if paquete.tipo== 3:
+		if paquete.tipo == 3:
 
 
 			#reviso si tengo solicitudes y en caso de tenerlas creo paquete solicitud para mi azul
@@ -185,7 +188,10 @@ class Naranja():
 				#paquete_enviar= self.packs.create_pack_token('T' , '1' ,  self.mi_ip , paquete.ip_azul , aux[1] , 'D' , paquete.puerto_azul)
 
 			#reviso si mis nodos azules estan completos
-			elif self.completo:
+			elif self.completo and self.mi_complete:
+				print('llego complete1')
+				self.completos = self.completos + 1
+				self.mi_complete=1
 				#para control con timer
 				self.llego_naranja=0
 				self.token=1
@@ -199,9 +205,9 @@ class Naranja():
 
 			#guardo el nodo que llego de otro naranja en mi lista de nodos ocupados
 
-			aux=[paquete.nodo, paquete.ip_azul, paquete.puerto_azul]
+			aux=[paquete.ip_azul, paquete.puerto_azul]
 
-			if aux in self.nodos_grafo:
+			if aux in self.solicitudes_listas:
 				paquete_enviar= self.packs.create_pack_vacio(3)
 				self.token=0
 				self.llego_naranja=1
@@ -210,11 +216,14 @@ class Naranja():
 				vecinos=self.buscar_nodo_exist(paquete.nodo)
 				sn_aux=self.sn_azul
 				print(vecinos)
+				self.mutex_azul.acquire()
+				if self.azules==15:
+					self.mi_complete=1
+
 				for i in vecinos:
 
 					existe=False
 					if i != '' and i != str(paquete.nodo):
-
 						for temp in self.nodos_grafo:
 							if int(i) in temp:
 								existe=True
@@ -233,11 +242,13 @@ class Naranja():
 
 						sn_aux+=1
 
+				self.mutex_azul.release()
 
 
 
 
 			else:
+				aux=[paquete.nodo, paquete.ip_azul, paquete.puerto_azul]
 				self.nodos_grafo.append(aux)
 
 				print(self.nodos_grafo)
@@ -260,15 +271,34 @@ class Naranja():
 		elif paquete.tipo==2:
 
 			if self.token:
+				print('llego complete')
 				paquete_enviar= self.packs.create_pack_vacio(3)
+				self.paquetes_naranjas.append(paquete_enviar)
 				self.token=0
+				self.mi_complete=0
+
 
 			else:
 				self.completos = self.completos + 1
+				self.paquetes_naranjas.append(paquete_enviar)
+
 				#if completos == cant_nodos
 				#	send paquete
 
-			self.paquetes_naranjas.append(paquete_enviar)
+			if self.completos==1:
+				sn_aux=self.sn_azul
+
+				self.mutex_azul.acquire()
+				for i in self.solicitudes_listas:
+					listo=self.packs.create_pack_17(0, sn_aux ,17)
+					paquete_send=[listo, (i[0], i[1]), sn_aux]
+					self.paquetes_azules.append(paquete_send)
+					self.llego_azul= self.llego_azul+1
+					sn_aux+=1
+				self.mutex_azul.release()
+
+
+			
 
 
 		elif paquete.tipo==0:
@@ -302,10 +332,9 @@ class Naranja():
 			if len(self.paquetes_naranjas):
 				paquete=self.paquetes_naranjas.pop()
 				#paquete auxiliar por si se pierde el que envie
-				if str(chr(paquete[0]))!=0:
-					paquete_respaldo=paquete
+				paquete_respaldo=paquete
 				#print(paquete)
-
+				#if paquete[0]!=3:
 				print('voy a enviar ' + str(paquete))
 				self.UDPServerSocket.sendto(paquete, self.vecino)
 
@@ -331,9 +360,11 @@ class Naranja():
 			bytesAddressPair = self.UDPServerSocket.recvfrom(self.bufferSize)
 
 			paquete = bytesAddressPair[0]
+		
 
 
 			self.mutex_naranja.acquire()
+
 
 
 			#verficio si es token inicial
@@ -397,8 +428,9 @@ class Naranja():
 			if len(self.paquetes_azules):
 				paquete=self.paquetes_azules.pop()
 
-				print('voy a enviar azul ' + str(paquete[0]))
+				
 				if paquete[2]==-1:
+					print('voy a enviar azul ' + str(paquete[0]))
 					self.UDPServerazul.sendto(paquete[0], paquete[1])
 
 				elif paquete[2]!=self.sn_azul:
@@ -407,7 +439,7 @@ class Naranja():
 				else:
 
 					paquete_respaldo=paquete
-
+					print('voy a enviar azul ' + str(paquete[0]))
 					self.UDPServerazul.sendto(paquete[0], paquete[1])
 
 
@@ -455,13 +487,20 @@ class Naranja():
 				paquete_azul=self.packs.unpack_pack_azul(paquete)
 
 				if paquete_azul.tipo==14:
-
 					#print y proceso el paquete
 
 
 					aux=[addr[0], addr[1]]
-					if aux not in self.solicitudes:
+					if aux not in self.solicitudes_listas:
+						self.azules+=1
 						self.solicitudes.append(aux)
+						self.solicitudes_listas.append(aux)
+
+					if self.azules==15:
+						self.completo=1
+
+					
+
 
 					print(self.solicitudes)
 					print(str(paquete_azul.sn))
@@ -471,17 +510,6 @@ class Naranja():
 					ack=pack('B',1)
 					ack+=pack('H',paquete_azul.sn)
 					paquete_send=[ack, addr, -1]
-
-					self.paquetes_azules.append(paquete_send)
-
-				elif paquete_azul.tipo==17:
-
-					#print y proceso el paquete
-
-					self.completo=1
-					ack=pack('B',1)
-					ack+=pack('H',paquete_azul.sn)
-					paquete_send=[ack , addr, -1]
 
 					self.paquetes_azules.append(paquete_send)
 

@@ -62,6 +62,13 @@ class Paquetes():
 		data+=pack('>H',vecino)
 		return data
 
+	def create_pack_17(self,usl,sn,tipo):
+		data=pack('B',usl)
+		data+=pack('>H',sn)
+		data+=pack('B',tipo)
+		return data
+
+
 	def create_pack_16(self,usl,sn,tipo,nodo, vecino, ip_azul, puerto_azul,):
 		data=pack('B',usl)
 		data+=pack('>H',sn)
