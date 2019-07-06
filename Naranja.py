@@ -26,6 +26,9 @@ class Naranja():
 		self.token=0
 		self.inicial=0
 		self.azules=0
+		self.timer = Event()
+		self.termino=1
+		self.soy_generador=0
 
 		#lista de nodos activos'
 		self.nodos_grafo = []
@@ -54,9 +57,9 @@ class Naranja():
 
 
 		#variables para conexion UDP
-		self.mi_ip= '10.1.137.41'
-		self.mi_port = 9999
-		self.port_azul   = 5005
+		self.mi_ip= '10.127.127.1'
+		self.mi_port = 9991
+		self.port_azul   = 5004
 		self.bufferSize  = 1035
 		self.UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 		self.UDPServerazul = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
@@ -67,7 +70,7 @@ class Naranja():
 
 		self.UDPServerSocket.bind((self.mi_ip, self.mi_port))
 		self.UDPServerazul.bind((self.mi_ip, self.port_azul))
-		self.vecino=('10.1.137.50', 9999)
+		self.vecino=('10.127.127.1', 9999)
 
 
 
@@ -174,7 +177,7 @@ class Naranja():
 					self.nodos_grafo.append([nodo, aux[0], aux[1]])
 					print(self.nodos_grafo)
 					#para control con timer
-					self.llego_naranja=0
+					
 					paquete_enviar= self.packs.create_pack_asignacion(1 , nodo , int(IPv4Address(aux[0])), aux[1])
 					self.token=1
 					#paquete_azul= self.packs.create_pack_asignacion()
@@ -193,7 +196,7 @@ class Naranja():
 				self.completos = self.completos + 1
 				self.mi_complete=1
 				#para control con timer
-				self.llego_naranja=0
+				
 				self.token=1
 				paquete_enviar= self.packs.create_pack_complete(2)
 
@@ -210,7 +213,7 @@ class Naranja():
 			if aux in self.solicitudes_listas:
 				paquete_enviar= self.packs.create_pack_vacio(3)
 				self.token=0
-				self.llego_naranja=1
+				
 				self.paquetes_naranjas.append(paquete_enviar)
 
 				vecinos=self.buscar_nodo_exist(paquete.nodo)
@@ -315,6 +318,8 @@ class Naranja():
 				self.paquetes_naranjas.append(paquete_enviar)
 
 
+
+
 			#ya me llego mi token inicial...
 
 
@@ -339,10 +344,23 @@ class Naranja():
 				self.UDPServerSocket.sendto(paquete, self.vecino)
 
 			self.mutex_naranja.release()
+			if self.token or self.soy_generador:
+				self.termino=1
+				for i in range(60):
+   					time.sleep(1)
+   					if self.termino==0:
+   						break
+   						
+				if self.termino==1:
+					print('voy a reenviar ' + str(paquete_respaldo))
+					self.UDPServerSocket.sendto(paquete_respaldo, self.vecino)
+
+
 			#cuando esto se cumpla significa que envia un paquete, el timer se vencio y no me llego entonces reeenvio y reinicio timer
-			if self.reenviar_naranja==1 and self.llego_naranja==0:
-				self.UDPServerSocket.sendto(paquete_respaldo, self.vecino)
-				self.reenviar_naranja=0
+			# if self.reenviar_naranja==1 and self.llego_naranja==0:
+			# 	print('voy a reenviar ' + str(paquete_respaldo))
+			# 	self.UDPServerSocket.sendto(paquete_respaldo, self.vecino)
+			# 	self.reenviar_naranja=0
 
 
 
@@ -383,7 +401,9 @@ class Naranja():
 				paquete_asignacion=self.packs.unpack_pack_asignacion(paquete)
 				#llego mi paquete cierro el timer
 				if self.token:
-					self.llego_naranja=1
+					self.termino=0
+					
+					
 
 				#print y proceso el paquete
 				self.packs.imprimir_token(paquete_asignacion)
@@ -395,7 +415,8 @@ class Naranja():
 				paquete_complete=self.packs.unpack_pack_complete(paquete)
 				#llego mi paquete cierro el timer
 				if self.token:
-					self.llego_naranja=1
+					self.termino=0
+					
 
 				#print y proceso el paquete
 				print('me llego ' + str(paquete))
@@ -406,8 +427,9 @@ class Naranja():
 				#paso de bytes a paquetes para procesar
 				paquete_vacio=self.packs.unpack_pack_vacio(paquete)
 				#llego mi paquete cierro el timer
-				if self.token:
-					self.llego_naranja=1
+				if self.soy_generador:
+					self.termino=0
+					
 
 				#print y proceso el paquete
 				print('me llego ' + str(paquete))
@@ -416,7 +438,6 @@ class Naranja():
 
 
 			self.mutex_naranja.release()
-
 
 # AZUL-NARANJA EN PROCESO
 	def enviar_naranja_azul(self):
@@ -528,12 +549,12 @@ class Naranja():
 				quit()
 
 
-	#thread del timer
-	def timer_naranja(self):
-		while True:
-			if self.llego_naranja==0:
-				time.sleep(50)
-				self.reenviar_naranja=1
+	# #thread del timer
+	# def timer_naranja(self):
+	# 	while True:
+	# 		if self.llego_naranja==0:
+	# 			time.sleep(50)
+	# 			self.reenviar_naranja=1
 
 
 
@@ -548,6 +569,8 @@ class Naranja():
 		while True:
 
 			if self.inicial==1:
+				
+				print('soy generador')
 				#veo si soy el elegido y creo un token inicial con solicitud en caso de tenerla y si no solo lo paso a mi vecino
 
 				aux=['',0]
@@ -573,6 +596,7 @@ class Naranja():
 					paquete_enviar= self.packs.create_pack_vacio(3)
 					self.token=0
 					self.paquetes_naranjas.append(paquete_enviar)
+					self.soy_generador=1
 
 					break
 
@@ -589,18 +613,18 @@ def main():
 		t5=Thread(target=n_naranja.recibir_azul_naranja)
 		t6=Thread(target=n_naranja.enviar_naranja_azul)
 		t7=Thread(target=n_naranja.timer_azul)
-		t3=Thread(target=n_naranja.timer_naranja)
+		#t3=Thread(target=n_naranja.timer_naranja)
 		t4=Thread(target=n_naranja.verifica_inicial)
 		t1=Thread(target=n_naranja.recibir_naranja_naranja)
 		t2=Thread(target=n_naranja.enviar_naranja_naranja)
 		t1.start()
 		t2.start()
-		t3.start()
+		#t3.start()
 		t4.start()
 		t5.start()
 		t6.start()
 		t7.start()
-		t3.join()
+		#t3.join()
 		t1.join()
 		t2.join()
 		t4:join()
