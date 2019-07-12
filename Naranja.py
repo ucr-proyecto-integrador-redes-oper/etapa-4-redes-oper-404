@@ -86,7 +86,7 @@ class Naranja():
 
 	#lee el csv y crea el grafo
 	def leer_grafo(self):
-		with open('grafo_prueba.csv', newline='') as File:
+		with open('grafo.csv', newline='') as File:
 			reader = csv.reader(File)
 			for row in reader:
 				self.grafo.append(row)
@@ -98,7 +98,7 @@ class Naranja():
 	def buscar_nodo(self):
 
 		for f in range(len(self.grafo)):
-			for c in range(len(self.grafo[0])):
+			for c in range(len(self.grafo[f])):
 				existe=False
 				if self.grafo[f][c]!='':
 
@@ -124,7 +124,7 @@ class Naranja():
 	def buscar_nodo_exist(self,nodo):
 
 		for f in range(len(self.grafo)):
-			for c in range(len(self.grafo[0])):
+			for c in range(len(self.grafo[f])):
 				if self.grafo[f][c]==str(nodo):
 					return self.grafo[f]
 
