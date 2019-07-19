@@ -67,6 +67,7 @@ class Azules():
 
 ######################################### Arbol Generador #############################################
 
+    # Si es el nodo 1, por defecto se encuentra en el arbol
     def join_tree(self):  
         if self.id_nodo == 1:  
             self.estoy_en_arbol = True 
@@ -76,12 +77,13 @@ class Azules():
             msgId = (11).to_bytes(1, byteorder="big")
             nodeId = (self.id_nodo).to_bytes(2, byteorder="big")
             msgFinal = (msgId + nodeId)
-            for vecino in self.vecinos:
-                self.uslito.enviar(msgFinal, str(vecino[1]), int(vecino[2]))
-                print('enviando a vecino: ' + str(vecino[0]))
+            for i in self.vecinos:
+                self.uslito.enviar(msgFinal, str(i[1]), int(i[2]))
+                print('enviando a vecino: ' + str(i[0]))
                 
             sleep(2)
 
+    # 
     def Ido(self, id):  
         if self.estoy_en_arbol == True:
             msg = (12).to_bytes(1, byteorder="big") + (self.id_nodo).to_bytes(2, byteorder="big")
